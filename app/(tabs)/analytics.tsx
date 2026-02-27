@@ -4,11 +4,12 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { subDays, format, startOfWeek, addDays, isSameDay } from 'date-fns';
+import { subDays, format } from 'date-fns';
 import { useAuthStore } from '../../src/stores/authStore';
 import { useHabitStore } from '../../src/stores/habitStore';
 import { useTaskStore } from '../../src/stores/taskStore';
@@ -203,14 +204,13 @@ export default function AnalyticsScreen() {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function PeriodTab({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
-    <View
+    <TouchableOpacity
       style={[styles.periodTab, active && styles.periodTabActive]}
-      // @ts-ignore — pressable workaround
-      onStartShouldSetResponder={() => true}
-      onResponderRelease={onPress}
+      onPress={onPress}
+      activeOpacity={0.75}
     >
       <Text style={[styles.periodLabel, active && styles.periodLabelActive]}>{label}</Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 

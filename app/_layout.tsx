@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { Stack } from 'expo-router';
+import { ToastOverlay } from '../src/components/ui/ToastOverlay';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Font from 'expo-font';
@@ -92,6 +94,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.ONYX }}>
       <SafeAreaProvider>
         <StatusBar style="light" backgroundColor={Colors.ONYX} />
+        <View style={{ flex: 1 }}>
         <Stack
           screenOptions={{
             headerShown: false,
@@ -125,7 +128,13 @@ export default function RootLayout() {
             name="(modals)/journal-entry"
             options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
           />
+          <Stack.Screen
+            name="(modals)/edit-profile"
+            options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+          />
         </Stack>
+        <ToastOverlay />
+        </View>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

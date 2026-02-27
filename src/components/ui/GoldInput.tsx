@@ -66,7 +66,7 @@ export function GoldInput({
       {label && (
         <Text style={[styles.label, error && styles.labelError]}>{label}</Text>
       )}
-      <AnimatedView style={[styles.inputWrapper, borderStyle]}>
+      <AnimatedView style={[styles.inputWrapper, props.multiline && styles.wrapperMultiline, borderStyle]}>
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
         <TextInput
           {...props}
@@ -74,6 +74,7 @@ export function GoldInput({
             styles.input,
             leftIcon && styles.inputWithLeft,
             rightIcon && styles.inputWithRight,
+            props.multiline && styles.inputMultiline,
             props.style,
           ]}
           placeholderTextColor={Colors.DUST}
@@ -121,6 +122,14 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.MD,
     borderWidth: 1.5,
     minHeight: 52,
+  },
+  wrapperMultiline: {
+    alignItems: 'flex-start',
+  },
+  inputMultiline: {
+    textAlignVertical: 'top',
+    paddingTop: Spacing.MD,
+    minHeight: 80,
   },
   input: {
     flex: 1,

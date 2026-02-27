@@ -201,9 +201,11 @@ export default function ProfileScreen() {
         <CleoCard style={styles.navCard}>
           {[
             { label: '🌙 Moon Cycle', onPress: () => router.push('/(modals)/cycle-tracker') },
-            { label: '📊 Analytics', onPress: () => {} },
-            { label: '✎ Edit Profile', onPress: () => {} },
-            { label: '🔑 Change Password', onPress: () => {} },
+            { label: '🏋️ Training', onPress: () => router.push('/(tabs)/training') },
+            { label: '📊 Analytics', onPress: () => router.push('/(tabs)/analytics') },
+            { label: '📜 Journal', onPress: () => router.push('/(tabs)/journal') },
+            { label: '✎ Edit Profile', onPress: () => router.push('/(modals)/edit-profile') },
+            { label: '🔑 Change Password', onPress: () => router.push('/(modals)/edit-profile?tab=password') },
           ].map((item) => (
             <TouchableOpacity
               key={item.label}
