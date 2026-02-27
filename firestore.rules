@@ -1,0 +1,158 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+
+    function isValidString(val, maxLen) {
+      return val is string && val.size() > 0 && val.size() <= maxLen;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function notChanging(field) {
+      return !(field in request.resource.data.diff(resource.data).affectedKeys());
+    }
+
+    // ── Users ─────────────────────────────────────────────────────────────────
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid)
+        && hasRequiredFields(['displayName', 'email', 'createdAt', 'tier'])
+        && isValidString(request.resource.data.displayName, 64)
+        && request.resource.data.tier in ['free', 'premium'];
+      allow update: if isOwner(uid)
+        && notChanging('createdAt')
+        && notChanging('email');
+      allow delete: if false;
+
+      // ── Habits ──────────────────────────────────────────────────────────────
+      match /habits/{habitId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /habitLogs/{logId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // ── Tasks ───────────────────────────────────────────────────────────────
+      match /tasks/{taskId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // ── Training ────────────────────────────────────────────────────────────
+      match /workoutTemplates/{templateId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /workoutSessions/{sessionId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // ── Journal ─────────────────────────────────────────────────────────────
+      match /journalEntries/{entryId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // ── Moon Cycle ──────────────────────────────────────────────────────────
+      match /cycleLogs/{logId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /cycleSettings/{settingsId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // ── Notifications ───────────────────────────────────────────────────────
+      match /notificationTokens/{tokenId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    // ── Royal Court (Circles) ─────────────────────────────────────────────────
+    match /courts/{courtId} {
+      // Members can read court info
+      allow read: if isAuth()
+        && request.auth.uid in resource.data.memberIds;
+
+      // Only creator can create
+      allow create: if isAuth()
+        && request.resource.data.creatorId == request.auth.uid
+        && hasRequiredFields(['name', 'creatorId', 'memberIds', 'createdAt'])
+        && request.resource.data.memberIds.hasAll([request.auth.uid])
+        && request.resource.data.memberIds.size() <= 12;
+
+      // Creator can update metadata; members can join/leave
+      allow update: if isAuth() && (
+        request.auth.uid == resource.data.creatorId
+        || (
+          // Member joining: only adding their own uid
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'updatedAt'])
+          && request.resource.data.memberIds.size() <= 12
+        )
+      );
+
+      allow delete: if isAuth()
+        && request.auth.uid == resource.data.creatorId;
+
+      // Court messages
+      match /messages/{messageId} {
+        allow read: if isAuth()
+          && request.auth.uid in get(/databases/$(database)/documents/courts/$(courtId)).data.memberIds;
+        allow create: if isAuth()
+          && request.auth.uid in get(/databases/$(database)/documents/courts/$(courtId)).data.memberIds
+          && request.resource.data.senderId == request.auth.uid
+          && isValidString(request.resource.data.text, 1000);
+        allow update, delete: if isAuth()
+          && request.auth.uid == resource.data.senderId;
+      }
+
+      // Court challenges
+      match /challenges/{challengeId} {
+        allow read: if isAuth()
+          && request.auth.uid in get(/databases/$(database)/documents/courts/$(courtId)).data.memberIds;
+        allow write: if isAuth()
+          && request.auth.uid in get(/databases/$(database)/documents/courts/$(courtId)).data.memberIds;
+      }
+    }
+
+    // ── Invitations ───────────────────────────────────────────────────────────
+    match /invitations/{inviteId} {
+      allow read: if isAuth()
+        && (request.auth.uid == resource.data.inviterId
+            || request.auth.uid == resource.data.inviteeId
+            || request.auth.token.email == resource.data.inviteeEmail);
+      allow create: if isAuth()
+        && request.resource.data.inviterId == request.auth.uid;
+      allow update: if isAuth()
+        && (request.auth.uid == resource.data.inviteeId
+            || request.auth.uid == resource.data.inviterId)
+        && notChanging('inviterId')
+        && notChanging('courtId');
+      allow delete: if isAuth()
+        && request.auth.uid == resource.data.inviterId;
+    }
+
+    // ── Public user profiles (read-only subset) ───────────────────────────────
+    match /publicProfiles/{uid} {
+      allow read: if isAuth();
+      allow write: if isOwner(uid);
+    }
+
+    // ── Leaderboard (computed by Cloud Functions) ────────────────────────────
+    match /leaderboard/{entryId} {
+      allow read: if isAuth();
+      allow write: if false; // written by Cloud Functions only
+    }
+  }
+}
